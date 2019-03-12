@@ -139,8 +139,6 @@ func main() {
     storyTemplate = storyTmpl
     askTemplate = askTmpl
 
-    var currentId int = -1
-
     // start ticker to poll for updates
     ticker := time.NewTicker(5 * time.Minute)
     go func() {
@@ -155,17 +153,17 @@ func main() {
                 <- ticker.C
                 continue
             } else {
-                if currentId == -1 {
+                if state.LastId == -1 {
                     log.Printf("setting current & latest id to %d", id)
-                    currentId = id
+                    state.LastId = id
                 }
 
                 state.LastLatestId = id
             }
 
             // process items
-            processAll(&hnClient, currentId, state.LastLatestId)
-            currentId = state.LastLatestId
+            processAll(&hnClient, state.LastId, state.LastLatestId)
+            state.LastId = state.LastLatestId
 
             // pause
             <- ticker.C

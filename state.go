@@ -7,6 +7,7 @@ import (
 )
 
 type State struct {
+    LastId int `json:"last_id"`
     LastLatestId int `json:"last_latest_id"`
 }
 
@@ -16,6 +17,7 @@ func loadState(fileName string) (*State, error) {
         // write sample one
         if os.IsNotExist(err) {
             newState := State{
+                LastId: -1,
                 LastLatestId: -1,
             }
 
