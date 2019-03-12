@@ -3,6 +3,7 @@ package main
 import (
     "bytes"
     "fmt"
+    "html"
     "log"
     "net/url"
     "os"
@@ -114,8 +115,8 @@ func main() {
         "formatTime": func (tm uint64) string {
             return fmt.Sprintf("%s", time.Unix(int64(tm), 0))
         },
-        "unHtmlify": func (html string) string {
-            return html2md.Convert(html)
+        "unHtmlify": func (rawHtml string) string {
+            return html.UnescapeString(html2md.Convert(rawHtml))
         },
     }
 
