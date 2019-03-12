@@ -106,7 +106,7 @@ func main() {
     // load state
     state, err := loadState("state.json")
     if err != nil {
-        log.Panic("failed to load state!")
+        log.Panic("failed to load state!", err)
     }
 
     // set up templates
