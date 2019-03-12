@@ -94,6 +94,13 @@ func main() {
         webhookUrl = serializedUrl
     }
 
+    // load state
+    state, err := loadState("state.json")
+    if err != nil {
+        log.Panic("failed to load state!")
+    }
+
+    // set up templates
     funcMap := template.FuncMap{
         "formatTime": func (tm uint64) string {
             return fmt.Sprintf("%s", time.Unix(int64(tm), 0))
@@ -123,8 +130,6 @@ func main() {
     storyTemplate = storyTmpl
     askTemplate = askTmpl
 
-
-    var latestId int = -1
     var currentId int = -1
 
     // start ticker to poll for updates
@@ -135,7 +140,7 @@ func main() {
             if id, err := hnClient.GetLatestItemId(); err != nil {
                 log.Print("failed to get latest item id: ", err)
                 continue
-            } else if latestId == id {
+            } else if state.LastLatestId == id {
                 log.Print("no updates this time")
                 continue
             } else {
@@ -144,18 +149,26 @@ func main() {
                     currentId = id
                 }
 
-                latestId = id
+                state.LastLatestId = id
             }
 
             // process items
-            processAll(&hnClient, currentId, latestId)
-            currentId = latestId
+            processAll(&hnClient, currentId, state.LastLatestId)
+            currentId = state.LastLatestId
 
             // pause
             <- ticker.C
         }
     }()
 
+    // wait for interrupt signal
     <- interrupt
     ticker.Stop()
+
+    // save state on exit
+    log.Print("saving state")
+    if err := state.save("state.json"); err != nil {
+        log.Panic("failed to save state", err)
+    }
+    log.Print("done, exiting")
 }
