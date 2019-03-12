@@ -11,15 +11,19 @@ type State struct {
     LastLatestId int `json:"last_latest_id"`
 }
 
+func NewState() State {
+    return State{
+        LastId: -1,
+        LastLatestId: -1,
+    }
+}
+
 func loadState(fileName string) (*State, error) {
     // check if configuration file exists
     if _, err := os.Stat(fileName); err != nil {
         // write sample one
         if os.IsNotExist(err) {
-            newState := State{
-                LastId: -1,
-                LastLatestId: -1,
-            }
+            newState := NewState()
 
             // handled in program code
             return &newState, nil
@@ -34,7 +38,7 @@ func loadState(fileName string) (*State, error) {
         return nil, err
     }
 
-    var deserializedState State
+    deserializedState := NewState()
     if err := json.Unmarshal(raw, &deserializedState); err != nil {
         return nil, err
     }

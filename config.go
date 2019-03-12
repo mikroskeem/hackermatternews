@@ -11,12 +11,18 @@ type Configuration struct {
     WebhookUrl string `json:"mm_webhook_url"`
 }
 
+func NewConfiguration() Configuration {
+    return Configuration{
+        WebhookUrl: "",
+    }
+}
+
 func loadConfig(fileName string) (*Configuration, error) {
     // check if configuration file exists
     if _, err := os.Stat(fileName); err != nil {
         // write sample one
         if os.IsNotExist(err) {
-            sampleConfig := Configuration{}
+            sampleConfig := NewConfiguration()
             serialized, _ := json.MarshalIndent(sampleConfig, "", "    ")
 
             ioutil.WriteFile(fileName, serialized, 0600)
@@ -35,7 +41,7 @@ func loadConfig(fileName string) (*Configuration, error) {
     } else {
         defer file.Close()
 
-        var deserializedConfig Configuration
+        deserializedConfig := NewConfiguration()
         reader := bufio.NewReader(file)
         raw, err := ioutil.ReadAll(reader)
         if err != nil {
