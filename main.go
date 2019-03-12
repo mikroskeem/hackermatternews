@@ -21,49 +21,58 @@ var (
     webhookUrl string
 )
 
+func process(hnClient *Client, id int) {
+    // fetch
+    log.Printf("fetching item with id %d", id)
+    item, err := hnClient.GetItem(id)
+    if err != nil {
+        log.Print("failed to get latest item: ", err)
+        return
+    }
+
+    // process
+    spew.Dump(item)
+
+    if item.Deleted {
+        log.Printf("skipping deleted item %d", id)
+        return
+    }
+
+    switch item.Type {
+    case "story":
+        isAsk := len(item.Text) > 0
+
+        var formattedArticle bytes.Buffer
+        if isAsk {
+            askTemplate.Execute(&formattedArticle, item)
+        } else {
+            storyTemplate.Execute(&formattedArticle, item)
+        }
+
+        message := Message{
+            Webhook: Webhook{
+                URL: webhookUrl,
+            },
+            Text: formattedArticle.String(),
+        }
+
+        if err := message.Send(); err != nil {
+            log.Print("failed to post news to mattermost: ", err)
+        }
+    case "comment":
+        log.Print("someone commented on something, nobody cares")
+    }
+}
+
 func processAll(hnClient *Client, fromExcl int, toIncl int) {
+    if fromExcl == toIncl {
+        process(hnClient, toIncl)
+        return
+    }
+
     ticker := time.NewTicker(5 * time.Second)
     for id := fromExcl + 1; id <= toIncl; id++ {
-        // fetch
-        log.Printf("fetching item with id %d", id)
-        item, err := hnClient.GetItem(id)
-        if err != nil {
-            log.Print("failed to get latest item: ", err)
-            continue
-        }
-
-        // process
-        spew.Dump(item)
-
-        if item.Deleted {
-            log.Printf("skipping deleted item %d", id)
-            continue
-        }
-
-        switch item.Type {
-        case "story":
-            isAsk := len(item.Text) > 0
-
-            var formattedArticle bytes.Buffer
-            if isAsk {
-                askTemplate.Execute(&formattedArticle, item)
-            } else {
-                storyTemplate.Execute(&formattedArticle, item)
-            }
-
-            message := Message{
-                Webhook: Webhook{
-                    URL: webhookUrl,
-                },
-                Text: formattedArticle.String(),
-            }
-
-            if err := message.Send(); err != nil {
-                log.Print("failed to post news to mattermost: ", err)
-            }
-        case "comment":
-            log.Print("someone commented on something, nobody cares")
-        }
+        process(hnClient, id)
 
         // pause
         <- ticker.C
