@@ -139,9 +139,11 @@ func main() {
             log.Print("checking for new items...")
             if id, err := hnClient.GetLatestItemId(); err != nil {
                 log.Print("failed to get latest item id: ", err)
+                <- ticker.C
                 continue
             } else if state.LastLatestId == id {
                 log.Print("no updates this time")
+                <- ticker.C
                 continue
             } else {
                 if currentId == -1 {
